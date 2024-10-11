@@ -28,8 +28,8 @@ func (g *GameOutcome) String() string {
 	return output
 }
 
-func (o *GameOutcome) Validate() error {
-	for i, player := range o.Players {
+func (g *GameOutcome) Validate(maxGameAgeDays int) error {
+	for i, player := range g.Players {
 		if player.Name == "" {
 			return fmt.Errorf("player %d has no name", i)
 		}
@@ -37,10 +37,10 @@ func (o *GameOutcome) Validate() error {
 			return fmt.Errorf("player %d has no score", i)
 		}
 	}
-	if o.FanFactionSetting != On && o.FanFactionSetting != OnNoFireAndIce {
+	if g.FanFactionSetting != On && g.FanFactionSetting != OnNoFireAndIce {
 		return errors.New("fan factions are not enabled")
 	}
-	if o.CreationTime.Before(time.Now().Add(-60 * time.Hour * 24)) {
+	if g.CreationTime.Before(time.Now().Add(-time.Duration(maxGameAgeDays) * time.Hour * 24)) {
 		return errors.New("game is too old (more than 60 days)")
 	}
 	return nil

@@ -8,9 +8,8 @@ import (
 )
 
 const (
-	getPlayerQuery    = `SELECT name, elo, bga_id, created_at FROM players WHERE name = $1`
+	getPlayerQuery    = `SELECT name, bga_id, created_at FROM players WHERE name = $1`
 	insertPlayerQuery = `INSERT INTO players (name, bga_id) VALUES ($1, $2)`
-	updatePlayerQuery = `UPDATE players SET elo = $1 WHERE name = $2`
 	deletePlayerQuery = `DELETE FROM players WHERE name = $1`
 )
 
@@ -35,14 +34,6 @@ func (p *Player) GetPlayer(name string) (*model.Player, error) {
 func (p *Player) InsertPlayer(name, bgaID string) error {
 	_, err := p.db.Exec(insertPlayerQuery, name, bgaID)
 	return err
-}
-
-func (p *Player) UpdatePlayer(name string, elo float64) error {
-	_, err := p.db.Exec(updatePlayerQuery, elo, name)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (p *Player) DeletePlayer(name string) error {

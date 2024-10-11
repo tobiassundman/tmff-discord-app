@@ -5,7 +5,7 @@ type FanFactionSetting string
 
 const (
 	Off            FanFactionSetting = "Off"
-	On             FanFactionSetting = "On"
+	On             FanFactionSetting = "On - with Fire & Ice"
 	OnNoFireAndIce FanFactionSetting = "On - no Fire & Ice"
 	Unknown        FanFactionSetting = "Unknown"
 )
@@ -13,8 +13,8 @@ const (
 // Map to and from string.
 var fanFactionSettingMap = map[string]FanFactionSetting{
 	"Off":                  Off,
-	"On":                   On,
-	"On - with Fire & Ice": OnNoFireAndIce,
+	"On - with Fire & Ice": On,
+	"On - no Fire & Ice":   OnNoFireAndIce,
 	"Unknown":              Unknown,
 }
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	model2 "tmff-discord-app/internal/app/services/model"
+	model "tmff-discord-app/internal/app/services/model"
 
 	"github.com/pkg/errors"
 	"github.com/playwright-community/playwright-go"
@@ -25,7 +25,7 @@ func newGameScraper(page playwright.Page, maxGameAgeDays int) *GameScraper {
 	}
 }
 
-func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model2.GameOutcome, error) {
+func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, error) {
 	tableID, err := getTableID(inputURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get table ID from URL")
@@ -33,6 +33,14 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model2.GameOutcome,
 	gameURL := fmt.Sprintf("https://en.boardgamearena.com/table?table=%d", tableID)
 	if _, err = gs.page.Goto(gameURL); err != nil {
 		return nil, err
+	}
+
+	exists, err := gs.tableExists()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if table exists")
+	}
+	if !exists {
+		return nil, errors.New("table does not exist")
 	}
 
 	err = gs.assertIsTerraMystica()
@@ -54,12 +62,12 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model2.GameOutcome,
 		return nil, errors.Wrap(err, "failed to get creation time")
 	}
 
-	outcome := &model2.GameOutcome{
+	outcome := &model.GameOutcome{
 		Players:           playerResults,
-		FanFactionSetting: model2.FanFactionSettingFromString(fanFactionSetting),
+		FanFactionSetting: model.FanFactionSettingFromString(fanFactionSetting),
 		CreationTime:      creationTime,
 	}
-	err = outcome.Validate()
+	err = outcome.Validate(gs.maxGameAgeDays)
 	if err != nil {
 		return nil, errors.Wrap(err, "game outcome is invalid")
 	}
@@ -92,7 +100,7 @@ func (gs *GameScraper) getFanFactionSetting() (string, error) {
 	return selectedText, nil
 }
 
-func (gs *GameScraper) getPlayerResults() ([]*model2.PlayerResult, error) {
+func (gs *GameScraper) getPlayerResults() ([]*model.PlayerResult, error) {
 	resultElement := gs.page.Locator(`meta[property="og:description"][content*="1°"]`)
 	results, err := resultElement.GetAttribute("content")
 	if err != nil {
@@ -130,26 +138,38 @@ func (gs *GameScraper) assertIsTerraMystica() error {
 	return errors.New("game name is not Terra Mystica")
 }
 
-func extractPlayers(input string) ([]*model2.PlayerResult, error) {
-	re := regexp.MustCompile(`\d+°\s+(\w+)\s+\((\d+)\s+pts\)`)
+func extractPlayers(input string) ([]*model.PlayerResult, error) {
+	re := regexp.MustCompile(`\d+°\s+([^\(]+)\s+\((\d+)\s+pts\)`)
 	matches := re.FindAllStringSubmatch(input, -1)
 	if len(matches) != 4 {
 		return nil, errors.New("invalid number of players")
 	}
-	var players []*model2.PlayerResult
+	var players []*model.PlayerResult
 	for _, match := range matches {
 		if len(match) > 2 {
 			score, err := strconv.Atoi(match[2])
 			if err != nil {
 				return nil, err
 			}
-			players = append(players, &model2.PlayerResult{
+			players = append(players, &model.PlayerResult{
 				Name:  match[1],
 				Score: score,
 			})
 		}
 	}
 	return players, nil
+}
+
+func (gs *GameScraper) tableExists() (bool, error) {
+	textLocator := gs.page.Locator("text=Table not found")
+	count, err := textLocator.Count()
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (gs *GameScraper) Close() error {
