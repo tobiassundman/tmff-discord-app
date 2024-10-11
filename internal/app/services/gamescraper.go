@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	model "tmff-discord-app/internal/app/services/model"
+	"tmff-discord-app/internal/app/services/model"
 
 	"github.com/pkg/errors"
 	"github.com/playwright-community/playwright-go"

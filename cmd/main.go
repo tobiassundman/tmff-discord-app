@@ -58,7 +58,8 @@ func main() {
 	// TODO: Use the repository and services
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
 	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, currentSeason)
-	fmt.Println(playerRepo, seasonRepo)
+	gameRepo := repository.NewGame(dbx, &parsedQueryTimeout, currentSeason)
+	fmt.Println(playerRepo, seasonRepo, gameRepo)
 
 	err = playwright.Install()
 	pw, err := playwright.Run()

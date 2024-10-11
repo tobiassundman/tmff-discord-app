@@ -1,10 +1,16 @@
 package repository
 
 import (
+	"database/sql"
+	"github.com/pkg/errors"
 	"time"
 	"tmff-discord-app/internal/app/repository/model"
 
 	"github.com/jmoiron/sqlx"
+)
+
+var (
+	ErrPlayerDoesntExist = errors.New("player doesn't exist")
 )
 
 const (
@@ -27,6 +33,9 @@ func NewPlayer(db *sqlx.DB, queryTimeout *time.Duration) *Player {
 func (p *Player) GetPlayer(name string) (*model.Player, error) {
 	var player model.Player
 	err := p.db.Get(&player, getPlayerQuery, name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrPlayerDoesntExist
+	}
 	return &player, err
 }
 
