@@ -1,10 +1,16 @@
 package repository
 
 import (
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"strings"
 	"time"
 	"tmff-discord-app/internal/app/repository/model"
+)
+
+var (
+	ErrGameNotFound = errors.New("game not found")
 )
 
 const (
@@ -30,21 +36,21 @@ const (
 	selectGameQuery = `SELECT bga_id, season_name, created_at FROM games WHERE bga_id = $1`
 )
 
-type GameRepository struct {
+type Game struct {
 	db           *sqlx.DB
 	queryTimeout *time.Duration
 	seasonName   string
 }
 
-func NewGame(db *sqlx.DB, queryTimeout *time.Duration, seasonName string) *GameRepository {
-	return &GameRepository{
+func NewGame(db *sqlx.DB, queryTimeout *time.Duration, seasonName string) *Game {
+	return &Game{
 		db:           db,
 		queryTimeout: queryTimeout,
 		seasonName:   seasonName,
 	}
 }
 
-func (r *GameRepository) CreateGameWithParticipants(gameID string, participants []*model.GameParticipant) error {
+func (r *Game) CreateGameWithParticipants(gameID string, participants []*model.GameParticipant) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return errors.Wrap(err, "failed to begin transaction")
@@ -54,6 +60,9 @@ func (r *GameRepository) CreateGameWithParticipants(gameID string, participants 
 	// Insert game
 	_, err = tx.Exec(insertGameQuery, gameID, r.seasonName)
 	if err != nil {
+		if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
+			return errors.New("season does not exist")
+		}
 		return errors.Wrap(err, "failed to insert game")
 	}
 
@@ -61,6 +70,9 @@ func (r *GameRepository) CreateGameWithParticipants(gameID string, participants 
 	for _, participant := range participants {
 		_, err = tx.Exec(insertGameParticipantQuery, gameID, participant.PlayerID, participant.Score, participant.EloChange, participant.EloBefore)
 		if err != nil {
+			if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
+				return errors.New("player does not exist")
+			}
 			return errors.Wrap(err, "failed to insert game participant")
 		}
 	}
@@ -74,13 +86,16 @@ func (r *GameRepository) CreateGameWithParticipants(gameID string, participants 
 	return nil
 }
 
-func (r *GameRepository) GetGameWithParticipants(gameID string) (*model.GameWithParticipants, error) {
+func (r *Game) GetGameWithParticipants(gameID string) (*model.GameWithParticipants, error) {
 	var game model.Game
 	var participants []model.GameParticipant
 
 	// Get game details
 	err := r.db.Get(&game, selectGameQuery, gameID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrGameNotFound
+		}
 		return nil, errors.Wrap(err, "failed to query game")
 	}
 

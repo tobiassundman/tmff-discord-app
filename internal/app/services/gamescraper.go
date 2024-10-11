@@ -30,7 +30,7 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get table ID from URL")
 	}
-	gameURL := fmt.Sprintf("https://en.boardgamearena.com/table?table=%d", tableID)
+	gameURL := fmt.Sprintf("https://en.boardgamearena.com/table?table=%s", tableID)
 	if _, err = gs.page.Goto(gameURL); err != nil {
 		return nil, err
 	}
@@ -63,6 +63,7 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, 
 	}
 
 	outcome := &model.GameOutcome{
+		ID:                tableID,
 		Players:           playerResults,
 		FanFactionSetting: model.FanFactionSettingFromString(fanFactionSetting),
 		CreationTime:      creationTime,
@@ -74,21 +75,21 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, 
 	return outcome, nil
 }
 
-func getTableID(gameURL string) (int, error) {
+func getTableID(gameURL string) (string, error) {
 	parsedURL, err := url.Parse(gameURL)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to parse URL")
+		return "", errors.Wrap(err, "failed to parse URL")
 	}
 	queryParams := parsedURL.Query()
 	id := queryParams.Get("table")
 	if id == "" {
-		return 0, errors.New("table ID not found in URL")
+		return "", errors.New("table ID not found in URL")
 	}
-	tableID, err := strconv.Atoi(id)
+	_, err = strconv.Atoi(id)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to convert table ID to int")
+		return "", errors.Wrap(err, "failed to convert table ID to int")
 	}
-	return tableID, nil
+	return id, nil
 }
 
 func (gs *GameScraper) getFanFactionSetting() (string, error) {

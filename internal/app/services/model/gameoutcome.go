@@ -13,6 +13,7 @@ type PlayerResult struct {
 }
 
 type GameOutcome struct {
+	ID                string
 	Players           []*PlayerResult
 	FanFactionSetting FanFactionSetting
 	CreationTime      *time.Time
@@ -20,6 +21,7 @@ type GameOutcome struct {
 
 func (g *GameOutcome) String() string {
 	var output string
+	output += fmt.Sprintf("Game ID: %s\n", g.ID)
 	for _, player := range g.Players {
 		output += fmt.Sprintf("PlayerResult: %s, Score: %d\n", player.Name, player.Score)
 	}

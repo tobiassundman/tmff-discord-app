@@ -46,6 +46,6 @@ func TestPlayer(t *testing.T) {
 
 		_, err := playerRepo.GetPlayer("Test Player1")
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, repository.ErrPlayerDoesntExist))
+		assert.True(t, errors.Is(err, repository.ErrPlayerNotFound))
 	})
 }

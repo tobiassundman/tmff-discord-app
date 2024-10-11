@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrPlayerDoesntExist = errors.New("player doesn't exist")
+	ErrPlayerNotFound = errors.New("player doesn't exist")
 )
 
 const (
@@ -34,7 +34,7 @@ func (p *Player) GetPlayer(name string) (*model.Player, error) {
 	var player model.Player
 	err := p.db.Get(&player, getPlayerQuery, name)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrPlayerDoesntExist
+		return nil, ErrPlayerNotFound
 	}
 	return &player, err
 }
