@@ -15,7 +15,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestExtractGameOutcome(t *testing.T) {
+	t.Parallel()
 	t.Run("friendly mode, correct settings", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -36,6 +38,7 @@ func TestExtractGameOutcome(t *testing.T) {
 		assert.Equal(t, 100, gameOutcome.Players[3].Score)
 	})
 	t.Run("turn based, correct settings", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -57,6 +60,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("wrong game - yahtzee", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -67,6 +71,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("fan factions not enabled", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -77,6 +82,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("wrong player count", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -86,6 +92,7 @@ func TestExtractGameOutcome(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid number of players")
 	})
 	t.Run("abandoned game", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -96,6 +103,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("table does not exist", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -106,6 +114,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("not an url", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -116,6 +125,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("url lacks table id", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -126,6 +136,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("more query parameters work", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()
@@ -136,6 +147,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 
 	t.Run("other language works", func(t *testing.T) {
+		t.Parallel()
 		maxGameAgeDays := 100000
 		gameScraper := createGameScraper(t, maxGameAgeDays)
 		defer gameScraper.Close()

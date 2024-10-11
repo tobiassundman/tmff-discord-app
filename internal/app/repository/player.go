@@ -10,7 +10,6 @@ import (
 const (
 	getPlayerQuery    = `SELECT name, bga_id, created_at FROM players WHERE name = $1`
 	insertPlayerQuery = `INSERT INTO players (name, bga_id) VALUES ($1, $2)`
-	deletePlayerQuery = `DELETE FROM players WHERE name = $1`
 )
 
 type Player struct {
@@ -34,12 +33,4 @@ func (p *Player) GetPlayer(name string) (*model.Player, error) {
 func (p *Player) InsertPlayer(name, bgaID string) error {
 	_, err := p.db.Exec(insertPlayerQuery, name, bgaID)
 	return err
-}
-
-func (p *Player) DeletePlayer(name string) error {
-	_, err := p.db.Exec(deletePlayerQuery, name)
-	if err != nil {
-		return err
-	}
-	return nil
 }

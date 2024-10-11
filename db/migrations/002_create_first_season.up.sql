@@ -1,0 +1,1 @@
+INSERT INTO seasons (name) VALUES ('First Fan Faction Season');

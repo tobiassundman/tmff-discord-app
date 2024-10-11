@@ -22,6 +22,7 @@ func main() {
 		queryTimeoutSeconds  = environment.GetEnvOrDefault("QUERY_TIMEOUT", "5s")
 		databaseFile         = environment.GetEnvOrDefault("DB_FILE", ":memory:")
 		maxGameAgeDaysString = environment.GetEnvOrDefault("MAX_GAME_AGE_DAYS", "60")
+		currentSeason        = environment.GetEnvOrDefault("CURRENT_SEASON", "First Fan Faction Season")
 	)
 
 	parsedQueryTimeout, err := time.ParseDuration(queryTimeoutSeconds)
@@ -40,6 +41,12 @@ func main() {
 	}
 	dbx := sqlx.NewDb(db, "sqlite3")
 
+	// Enable foreign key constraints
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		log.Fatal("Failed to enable foreign key constraints:", err)
+	}
+
 	err = database.Migrate(db, "./db/migrations")
 	if errors.Is(err, migrate.ErrNoChange) {
 		log.Fatalf("database is up to date")
@@ -50,7 +57,8 @@ func main() {
 
 	// TODO: Use the repository and services
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
-	fmt.Println(playerRepo)
+	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, currentSeason)
+	fmt.Println(playerRepo, seasonRepo)
 
 	err = playwright.Install()
 	pw, err := playwright.Run()
@@ -72,10 +80,4 @@ func main() {
 		log.Fatalf("could not create game scraper: %v", err)
 	}
 	defer gameScraper.Close()
-
-	gameOutcome, err := gameScraper.ExtractGameOutcome("https://sv.boardgamearena.com/table?table=559705570")
-	if err != nil {
-		log.Fatalf("could not extract game outcome: %v", err)
-	}
-	fmt.Println(gameOutcome)
 }
