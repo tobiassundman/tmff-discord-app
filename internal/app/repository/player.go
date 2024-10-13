@@ -14,8 +14,9 @@ var (
 )
 
 const (
-	getPlayerQuery    = `SELECT name, bga_id, created_at FROM players WHERE name = $1`
-	insertPlayerQuery = `INSERT INTO players (name, bga_id) VALUES ($1, $2)`
+	getPlayerQuery     = `SELECT name, bga_id, created_at FROM players WHERE name = $1`
+	insertPlayerQuery  = `INSERT INTO players (name, bga_id) VALUES ($1, $2)`
+	getAllPlayersQuery = `SELECT name, bga_id, created_at FROM players`
 )
 
 type Player struct {
@@ -37,6 +38,15 @@ func (p *Player) GetPlayer(name string) (*model.Player, error) {
 		return nil, ErrPlayerNotFound
 	}
 	return &player, err
+}
+
+func (p *Player) GetPlayers() ([]*model.Player, error) {
+	var players []*model.Player
+	err := p.db.Select(&players, getAllPlayersQuery)
+	if err != nil {
+		return nil, err
+	}
+	return players, nil
 }
 
 func (p *Player) InsertPlayer(name, bgaID string) error {

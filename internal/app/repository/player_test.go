@@ -25,6 +25,26 @@ func TestPlayer(t *testing.T) {
 		assert.Equal(t, "1", player.BGAID)
 	})
 
+	t.Run("Test multiple players", func(t *testing.T) {
+		t.Parallel()
+		dbx := newMigratedSQLiteDB(t)
+		queryTimeout := 2 * time.Second
+		playerRepo := repository.NewPlayer(dbx, &queryTimeout)
+
+		err := playerRepo.InsertPlayer("Test Player1", "1")
+		require.NoError(t, err)
+		err = playerRepo.InsertPlayer("Test Player2", "2")
+		require.NoError(t, err)
+
+		player, err := playerRepo.GetPlayers()
+		require.NoError(t, err)
+		assert.Len(t, player, 2)
+		assert.Equal(t, "Test Player1", player[0].Name)
+		assert.Equal(t, "1", player[0].BGAID)
+		assert.Equal(t, "Test Player2", player[1].Name)
+		assert.Equal(t, "2", player[1].BGAID)
+	})
+
 	t.Run("Test insert already exists", func(t *testing.T) {
 		t.Parallel()
 		dbx := newMigratedSQLiteDB(t)

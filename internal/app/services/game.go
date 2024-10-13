@@ -4,7 +4,6 @@ import (
 	"github.com/pkg/errors"
 	"math"
 	"sort"
-	"strconv"
 	"tmff-discord-app/internal/app/repository"
 	repomodel "tmff-discord-app/internal/app/repository/model"
 	"tmff-discord-app/internal/app/services/model"
@@ -20,13 +19,15 @@ type Game struct {
 	playerRepo *repository.Player
 	gameRepo   *repository.Game
 	seasonRepo *repository.Season
+	kValue     float64
 }
 
-func NewGame(playerRepo *repository.Player, gameRepo *repository.Game, seasonRepo *repository.Season) *Game {
+func NewGame(playerRepo *repository.Player, gameRepo *repository.Game, seasonRepo *repository.Season, kValue int) *Game {
 	return &Game{
 		playerRepo: playerRepo,
 		gameRepo:   gameRepo,
 		seasonRepo: seasonRepo,
+		kValue:     float64(kValue),
 	}
 }
 
@@ -129,7 +130,7 @@ func (g *Game) getEloChangeForPlayers(gameOutcome *model.GameOutcome, participan
 			case mainPlayer.Score == opponent.Score:
 				score = 0.5
 			}
-			eloChange := calculateSubMatchEloChange(participantsRating[idMap[mainPlayer.Name]], participantsRating[idMap[opponent.Name]], score)
+			eloChange := g.calculateSubMatchEloChange(participantsRating[idMap[mainPlayer.Name]], participantsRating[idMap[opponent.Name]], score)
 			eloChangeForPlayerIDs[idMap[mainPlayer.Name]] += eloChange
 		}
 	}
@@ -174,7 +175,7 @@ func (g *Game) getPlayerElos(
 			if !ok {
 				continue
 			}
-			if playerID == strconv.Itoa(participant.ID) {
+			if playerID == participant.PlayerID {
 				participantsRating[playerID] = participant.Elo
 			}
 		}
@@ -182,10 +183,10 @@ func (g *Game) getPlayerElos(
 	return participantsRating, nil
 }
 
-func calculateSubMatchEloChange(playerRating, opponentRating int, actualScore float64) int {
+func (g *Game) calculateSubMatchEloChange(playerRating, opponentRating int, actualScore float64) int {
 	subMatchCount := 3.0
-	const K = 32
+	const K = 64
 	expectedScore := 1 / (1 + math.Pow(10, float64(opponentRating-playerRating)/400))
-	eloChange := (K * (actualScore - expectedScore)) / subMatchCount
+	eloChange := (g.kValue * (actualScore - expectedScore)) / subMatchCount
 	return int(math.Round(eloChange))
 }

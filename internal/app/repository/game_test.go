@@ -184,4 +184,55 @@ func TestGame(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, repository.ErrGameNotFound))
 	})
+
+	t.Run("Game already exists", func(t *testing.T) {
+		t.Parallel()
+		dbx := newMigratedSQLiteDB(t)
+		queryTimeout := 2 * time.Second
+		gameRepo := repository.NewGame(dbx, &queryTimeout, "First Fan Faction Season")
+		playerRepo := repository.NewPlayer(dbx, &queryTimeout)
+
+		// Create players
+		err := playerRepo.InsertPlayer("Player 1", "1")
+		require.NoError(t, err)
+		err = playerRepo.InsertPlayer("Player 2", "2")
+		require.NoError(t, err)
+		err = playerRepo.InsertPlayer("Player 3", "3")
+		require.NoError(t, err)
+		err = playerRepo.InsertPlayer("Player 4", "4")
+		require.NoError(t, err)
+
+		gameID := "1"
+		participants := []*model.GameParticipant{
+			{
+				PlayerID:  "1",
+				Score:     110,
+				EloChange: 20,
+				EloBefore: 1000,
+			},
+			{
+				PlayerID:  "2",
+				Score:     130,
+				EloChange: -20,
+				EloBefore: 1000,
+			},
+			{
+				PlayerID:  "3",
+				Score:     100,
+				EloChange: -10,
+				EloBefore: 1000,
+			},
+			{
+				PlayerID:  "4",
+				Score:     140,
+				EloChange: 50,
+				EloBefore: 1000,
+			},
+		}
+		err = gameRepo.CreateGameWithParticipants(gameID, participants)
+		require.NoError(t, err)
+		err = gameRepo.CreateGameWithParticipants(gameID, participants)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "game is already registered")
+	})
 }

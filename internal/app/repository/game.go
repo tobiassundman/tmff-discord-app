@@ -63,6 +63,9 @@ func (r *Game) CreateGameWithParticipants(gameID string, participants []*model.G
 		if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 			return errors.New("season does not exist")
 		}
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return errors.New("game is already registered")
+		}
 		return errors.Wrap(err, "failed to insert game")
 	}
 

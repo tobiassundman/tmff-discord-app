@@ -23,6 +23,7 @@ func main() {
 		databaseFile         = environment.GetEnvOrDefault("DB_FILE", ":memory:")
 		maxGameAgeDaysString = environment.GetEnvOrDefault("MAX_GAME_AGE_DAYS", "60")
 		currentSeason        = environment.GetEnvOrDefault("CURRENT_SEASON", "First Fan Faction Season")
+		eloKFactor           = environment.GetEnvOrDefault("ELO_K_FACTOR", "64")
 	)
 
 	parsedQueryTimeout, err := time.ParseDuration(queryTimeoutSeconds)
@@ -33,6 +34,11 @@ func main() {
 	maxGameAgeDays, err := strconv.Atoi(maxGameAgeDaysString)
 	if err != nil {
 		log.Fatalf("could not parse MAX_GAME_AGE_DAYS: %v", err)
+	}
+
+	eloKFactorParsed, err := strconv.Atoi(eloKFactor)
+	if err != nil {
+		log.Fatalf("could not parse ELO_K_FACTOR: %v", err)
 	}
 
 	db, err := sql.Open("sqlite3", databaseFile)
@@ -59,7 +65,7 @@ func main() {
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
 	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, currentSeason)
 	gameRepo := repository.NewGame(dbx, &parsedQueryTimeout, currentSeason)
-	gameService := services.NewGame(playerRepo, gameRepo, seasonRepo)
+	gameService := services.NewGame(playerRepo, gameRepo, seasonRepo, eloKFactorParsed)
 	fmt.Println(gameService)
 
 	err = playwright.Install()
