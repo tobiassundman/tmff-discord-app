@@ -1,11 +1,12 @@
 package repository_test
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 	"tmff-discord-app/internal/app/repository"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetAll(t *testing.T) {
@@ -46,7 +47,6 @@ func TestGetAll(t *testing.T) {
 		assert.Equal(t, "First Fan Faction Season", result[2].SeasonName)
 		assert.Equal(t, 997, result[2].Elo)
 	})
-
 }
 
 func TestUpsert(t *testing.T) {

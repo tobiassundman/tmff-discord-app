@@ -1,16 +1,20 @@
 package services_test
 
 import (
-	"github.com/playwright-community/playwright-go"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 	"tmff-discord-app/internal/app/services"
+
+	"github.com/playwright-community/playwright-go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
-	playwright.Install()
+	err := playwright.Install()
+	if err != nil {
+		panic(err)
+	}
 	m.Run()
 }
 
@@ -18,8 +22,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	t.Parallel()
 	t.Run("friendly mode, correct settings", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		gameOutcome, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=572461868")
@@ -27,7 +30,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 		assert.Equal(t, "On - no Fire & Ice", string(gameOutcome.FanFactionSetting))
 		assert.Equal(t, "2024-10-07T21:01:00Z", gameOutcome.CreationTime.Format(time.RFC3339))
-		assert.Equal(t, 4, len(gameOutcome.Players))
+		assert.Len(t, gameOutcome.Players, 4)
 		assert.Equal(t, "Stahlbrötchen", gameOutcome.Players[0].Name)
 		assert.Equal(t, 148, gameOutcome.Players[0].Score)
 		assert.Equal(t, "deragned", gameOutcome.Players[1].Name)
@@ -39,8 +42,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 	t.Run("turn based, correct settings", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		gameOutcome, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=559705570")
@@ -48,7 +50,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 		assert.Equal(t, "On - with Fire & Ice", string(gameOutcome.FanFactionSetting))
 		assert.Equal(t, "2024-09-07T15:43:00Z", gameOutcome.CreationTime.Format(time.RFC3339))
-		assert.Equal(t, 4, len(gameOutcome.Players))
+		assert.Len(t, gameOutcome.Players, 4)
 		assert.Equal(t, "ymse", gameOutcome.Players[0].Name)
 		assert.Equal(t, 152, gameOutcome.Players[0].Score)
 		assert.Equal(t, "vonbrot", gameOutcome.Players[1].Name)
@@ -61,8 +63,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("wrong game - yahtzee", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=544240084")
@@ -72,8 +73,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("fan factions not enabled", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=570819150")
@@ -83,8 +83,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("wrong player count", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=557774225")
@@ -93,8 +92,7 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 	t.Run("abandoned game", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=555675245")
@@ -104,8 +102,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("table does not exist", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=555555555555555")
@@ -115,8 +112,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("not an url", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("123")
@@ -126,8 +122,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("url lacks table id", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		_, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table")
@@ -137,8 +132,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("more query parameters work", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		gameOutcome, err := gameScraper.ExtractGameOutcome("https://boardgamearena.com/table?table=572461868&a=b")
@@ -148,8 +142,7 @@ func TestExtractGameOutcome(t *testing.T) {
 
 	t.Run("other language works", func(t *testing.T) {
 		t.Parallel()
-		maxGameAgeDays := 100000
-		gameScraper := createGameScraper(t, maxGameAgeDays)
+		gameScraper := createGameScraper(t)
 		defer gameScraper.Close()
 
 		gameOutcome, err := gameScraper.ExtractGameOutcome("sv.boardgamearena.com//table?table=572461868&a=b")
@@ -158,11 +151,14 @@ func TestExtractGameOutcome(t *testing.T) {
 	})
 }
 
-func createGameScraper(t *testing.T, maxGameAgeDays int) *services.GameScraper {
+func createGameScraper(t *testing.T) *services.GameScraper {
 	pw, err := playwright.Run()
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		pw.Stop()
+		stopErr := pw.Stop()
+		if stopErr != nil {
+			t.Logf("could not stop playwright: %v", stopErr)
+		}
 	})
 
 	browser, err := pw.Chromium.Launch()
@@ -171,7 +167,7 @@ func createGameScraper(t *testing.T, maxGameAgeDays int) *services.GameScraper {
 		browser.Close()
 	})
 
-	pages := services.NewPages(browser, maxGameAgeDays)
+	pages := services.NewPages(browser, 100000)
 	t.Cleanup(func() {
 		pages.Close()
 	})

@@ -1,13 +1,14 @@
 package repository_test
 
 import (
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 	"tmff-discord-app/internal/app/repository"
 	"tmff-discord-app/internal/app/repository/model"
+
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGame(t *testing.T) {
@@ -63,7 +64,7 @@ func TestGame(t *testing.T) {
 
 		assert.Equal(t, gameID, game.GameID)
 		assert.Equal(t, "First Fan Faction Season", game.SeasonName)
-		assert.Equal(t, 4, len(game.Participants))
+		assert.Len(t, game.Participants, 4)
 
 		assert.Equal(t, "1", game.Participants[0].PlayerID)
 		assert.Equal(t, 110, game.Participants[0].Score)

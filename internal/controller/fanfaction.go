@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"net/url"
 	"sort"
@@ -14,6 +13,9 @@ import (
 	repomodel "tmff-discord-app/internal/app/repository/model"
 	"tmff-discord-app/internal/app/services"
 	"tmff-discord-app/internal/app/services/model"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 type FanFaction struct {
@@ -26,7 +28,13 @@ type FanFaction struct {
 	lastCommandByUser  map[string]time.Time
 }
 
-func NewFanFaction(conf *config.Config, playerRepo *repository.Player, gameService *services.Game, leaderboardService *services.Leaderboard, gameScraper *services.GameScraper) *FanFaction {
+func NewFanFaction(
+	conf *config.Config,
+	playerRepo *repository.Player,
+	gameService *services.Game,
+	leaderboardService *services.Leaderboard,
+	gameScraper *services.GameScraper,
+) *FanFaction {
 	return &FanFaction{
 		gameService:        gameService,
 		leaderboardService: leaderboardService,
@@ -37,7 +45,10 @@ func NewFanFaction(conf *config.Config, playerRepo *repository.Player, gameServi
 	}
 }
 
-func (g *FanFaction) FanFactionCommands() ([]*discordgo.ApplicationCommand, map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate)) {
+func (g *FanFaction) FanFactionCommands() (
+	[]*discordgo.ApplicationCommand,
+	map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate),
+) {
 	commands := []*discordgo.ApplicationCommand{
 		{
 			Name:        "register-game",
@@ -82,7 +93,7 @@ func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.Interaction
 	defer g.commandLock.Unlock()
 	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
 	if rateLimitUser {
-		err := fmt.Errorf("you are limited to one command per hour, ask a moderator to issue the command for you")
+		err := errors.New("you are limited to one command per hour, ask a moderator to issue the command for you")
 		g.respondWithError(s, i, err)
 		return
 	}
@@ -114,14 +125,14 @@ func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCre
 	log.Println("adding player")
 
 	if !g.hasRole(s, i.Member.Roles, "Moderator") {
-		err := fmt.Errorf("you do not have permission to add a player")
+		err := errors.New("you do not have permission to add a player")
 		g.respondWithError(s, i, err)
 		return
 	}
 
 	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
 	if rateLimitUser {
-		err := fmt.Errorf("you are limited to one command per hour, ask a moderator to issue the command for you")
+		err := errors.New("you are limited to one command per hour, ask a moderator to issue the command for you")
 		g.respondWithError(s, i, err)
 		return
 	}
@@ -217,7 +228,14 @@ func formatPlayers(players []*repomodel.Player) string {
 	sb.WriteString(fmt.Sprintf("%-20s %-10s %-20s\n", "Name", "ID", "Link"))
 	sb.WriteString(fmt.Sprintf("%-20s %-10s %-20s\n", "--------------------", "----------", "--------------------"))
 	for _, player := range players {
-		sb.WriteString(fmt.Sprintf("%-20s %-10s %-20s\n", player.Name, player.BGAID, fmt.Sprintf("https://boardgamearena.com/player?id=%s", player.BGAID)))
+		sb.WriteString(
+			fmt.Sprintf(
+				"%-20s %-10s %-20s\n",
+				player.Name,
+				player.BGAID,
+				fmt.Sprintf("https://boardgamearena.com/player?id=%s", player.BGAID),
+			),
+		)
 	}
 	sb.WriteString("```\n")
 	return sb.String()
@@ -244,22 +262,22 @@ func (g *FanFaction) registerGameAsync(s *discordgo.Session, i *discordgo.Intera
 	}
 	_, err = url.Parse(gameLink)
 	if err != nil {
-		return "", fmt.Errorf("invalid game link: %v", err)
+		return "", errors.Wrap(err, "invalid game link")
 	}
 
 	gameOutcome, err := g.gameScraper.ExtractGameOutcome(gameLink)
 	if err != nil {
-		return "", fmt.Errorf("could not extract game outcome: %v", err)
+		return "", errors.Wrap(err, "could not extract game outcome")
 	}
 
 	gameResult, err := g.gameService.RegisterGame(gameOutcome)
 	if err != nil {
-		return "", fmt.Errorf("could not register game: %v", err)
+		return "", errors.Wrap(err, "could not register game")
 	}
 
 	err = g.updateLeaderboard(s, i.GuildID, "leaderboard")
 	if err != nil {
-		return "", fmt.Errorf("could not update leaderboard: %v", err)
+		return "", errors.Wrap(err, "could not update leaderboard")
 	}
 
 	return formatGameResult(gameResult), nil
@@ -285,7 +303,7 @@ func (g *FanFaction) getOption(i *discordgo.InteractionCreate, optionName string
 	}
 	gameLink, ok := optionMap[optionName]
 	if !ok {
-		return "", fmt.Errorf("game-link option not provided")
+		return "", errors.New("game-link option not provided")
 	}
 	return gameLink.StringValue(), nil
 }
@@ -293,7 +311,7 @@ func (g *FanFaction) getOption(i *discordgo.InteractionCreate, optionName string
 func getChannelIDByName(s *discordgo.Session, guildID, channelName string) (string, error) {
 	channels, err := s.GuildChannels(guildID)
 	if err != nil {
-		return "", fmt.Errorf("error fetching channels: %v", err)
+		return "", errors.Wrap(err, "error fetching channels")
 	}
 
 	for _, channel := range channels {
@@ -331,12 +349,12 @@ func upsertMessage(s *discordgo.Session, channelID, messageHeader, newContent st
 	if err != nil {
 		_, err = s.ChannelMessageSend(channelID, newContent)
 		if err != nil {
-			return fmt.Errorf("could not send new message: %v", err)
+			return errors.Wrap(err, "could not send message")
 		}
 	} else {
 		_, err = s.ChannelMessageEdit(channelID, messageID, newContent)
 		if err != nil {
-			return fmt.Errorf("could not update message: %v", err)
+			return errors.Wrap(err, "could not edit message")
 		}
 	}
 
@@ -344,9 +362,10 @@ func upsertMessage(s *discordgo.Session, channelID, messageHeader, newContent st
 }
 
 func getMessageIDContaining(s *discordgo.Session, channelID, searchString string) (string, error) {
-	messages, err := s.ChannelMessages(channelID, 100, "", "", "")
+	maxMessages := 100
+	messages, err := s.ChannelMessages(channelID, maxMessages, "", "", "")
 	if err != nil {
-		return "", fmt.Errorf("error fetching messages: %v", err)
+		return "", errors.Wrap(err, "could not get messages")
 	}
 
 	for _, message := range messages {

@@ -40,7 +40,9 @@ func (g *GameOutcome) Validate(maxGameAgeDays int) error {
 	if g.FanFactionSetting != On && g.FanFactionSetting != OnNoFireAndIce {
 		return errors.New("fan factions are not enabled")
 	}
-	if g.CreationTime.Before(time.Now().Add(-time.Duration(maxGameAgeDays) * time.Hour * 24)) {
+	//nolint:mnd // 24 hours in a day
+	oneDay := 24 * time.Hour
+	if g.CreationTime.Before(time.Now().Add(-time.Duration(maxGameAgeDays) * oneDay)) {
 		return errors.New("game is too old (more than 60 days)")
 	}
 	return nil

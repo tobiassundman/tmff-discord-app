@@ -2,11 +2,13 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
+	"log"
 	"strings"
 	"time"
 	"tmff-discord-app/internal/app/repository/model"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -55,7 +57,12 @@ func (r *Game) CreateGameWithParticipants(gameID string, participants []*model.G
 	if err != nil {
 		return errors.Wrap(err, "failed to begin transaction")
 	}
-	defer tx.Rollback()
+	defer func(tx *sqlx.Tx) {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Printf("failed to rollback transaction: %v", rollbackErr)
+		}
+	}(tx)
 
 	// Insert game
 	_, err = tx.Exec(insertGameQuery, gameID, r.seasonName)
@@ -71,7 +78,14 @@ func (r *Game) CreateGameWithParticipants(gameID string, participants []*model.G
 
 	// Insert game participants
 	for _, participant := range participants {
-		_, err = tx.Exec(insertGameParticipantQuery, gameID, participant.PlayerID, participant.Score, participant.EloChange, participant.EloBefore)
+		_, err = tx.Exec(
+			insertGameParticipantQuery,
+			gameID,
+			participant.PlayerID,
+			participant.Score,
+			participant.EloChange,
+			participant.EloBefore,
+		)
 		if err != nil {
 			if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 				return errors.New("player does not exist")
@@ -116,6 +130,10 @@ func (r *Game) GetGameWithParticipants(gameID string) (*model.GameWithParticipan
 			return nil, errors.Wrap(scanErr, "failed to scan participant")
 		}
 		participants = append(participants, participant)
+	}
+
+	if iterateErr := rows.Err(); iterateErr != nil {
+		return nil, iterateErr
 	}
 
 	gameWithParticipants := &model.GameWithParticipants{

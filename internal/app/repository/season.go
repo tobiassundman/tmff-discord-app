@@ -2,19 +2,33 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/pkg/errors"
+	"log"
 	"strings"
 	"time"
 	"tmff-discord-app/internal/app/repository/model"
+
+	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 )
 
 const (
-	getAllSeasonParticipantsQuery = `SELECT id, season_name, player_id, elo, games_played, created_at FROM season_participants WHERE season_name = $1 ORDER BY elo DESC`
-	getSeasonParticipantQuery     = `SELECT id, season_name, player_id, elo, games_played, created_at FROM season_participants WHERE player_id = $1`
-	insertSeasonParticipantQuery  = `INSERT INTO season_participants(season_name, player_id, elo, games_played) VALUES(:season_name,:player_id,:elo,:games_played)`
-	updateSeasonParticipantQuery  = `UPDATE season_participants SET elo =:elo, games_played =:games_played WHERE id =:id`
+	getAllSeasonParticipantsQuery = `
+		SELECT id, season_name, player_id, elo, games_played, created_at 
+		FROM season_participants 
+		WHERE season_name = $1 
+		ORDER BY elo DESC`
+	getSeasonParticipantQuery = `
+		SELECT id, season_name, player_id, elo, games_played, created_at 
+		FROM season_participants 
+		WHERE player_id = $1`
+	insertSeasonParticipantQuery = `
+		INSERT INTO season_participants(season_name, player_id, elo, games_played) 
+		VALUES(:season_name,:player_id,:elo,:games_played)`
+	updateSeasonParticipantQuery = `
+		UPDATE season_participants 
+		SET elo =:elo, games_played =:games_played 
+		WHERE id =:id`
 )
 
 type Season struct {
@@ -46,7 +60,12 @@ func (s *Season) UpsertSeasonParticipant(playerID string, eloChange int) (*model
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func(tx *sqlx.Tx) {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Printf("failed to rollback transaction: %v", rollbackErr)
+		}
+	}(tx)
 
 	// Get the current season participant
 	var participant model.SeasonParticipant
@@ -60,12 +79,13 @@ func (s *Season) UpsertSeasonParticipant(playerID string, eloChange int) (*model
 			GamesPlayed: 1,
 		}
 		_, err = tx.NamedExec(insertSeasonParticipantQuery, participant)
-		if err != nil {
-			if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
-				return nil, errors.New("player or season does not exist")
-			}
+		switch {
+		case err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed"):
+			return nil, errors.New("player or season does not exist")
+		case err != nil:
 			return nil, err
 		}
+
 		commitErr := tx.Commit()
 		if commitErr != nil {
 			return nil, commitErr
@@ -73,25 +93,24 @@ func (s *Season) UpsertSeasonParticipant(playerID string, eloChange int) (*model
 		return &participant, nil
 	} else if err != nil {
 		return nil, err
-	} else {
-
-		// Update the participant
-		// Don't go below 0 elo
-		if participant.Elo+eloChange < 0 {
-			eloChange = -participant.Elo
-		}
-		participant.Elo += eloChange
-		participant.GamesPlayed += 1
-		_, err = tx.NamedExec(updateSeasonParticipantQuery, participant)
-		if err != nil {
-			return nil, err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return nil, err
-		}
-
-		return &participant, nil
 	}
+
+	// Update the participant
+	// Don't go below 0 elo
+	if participant.Elo+eloChange < 0 {
+		eloChange = -participant.Elo
+	}
+	participant.Elo += eloChange
+	participant.GamesPlayed++
+	_, err = tx.NamedExec(updateSeasonParticipantQuery, participant)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &participant, nil
 }

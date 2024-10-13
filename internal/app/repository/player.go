@@ -2,9 +2,10 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/pkg/errors"
 	"time"
 	"tmff-discord-app/internal/app/repository/model"
+
+	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 )

@@ -2,11 +2,12 @@ package repository_test
 
 import (
 	"database/sql"
-	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/require"
 	"log"
 	"testing"
 	"tmff-discord-app/pkg/database"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/require"
 )
 
 func newMigratedSQLiteDB(t *testing.T) *sqlx.DB {

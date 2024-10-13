@@ -146,11 +146,13 @@ func (gs *GameScraper) assertIsTerraMystica() error {
 func extractPlayers(input string) ([]*model.PlayerResult, error) {
 	re := regexp.MustCompile(`\d+°\s+([^\(]+)\s+\((\d+)\s+pts\)`)
 	matches := re.FindAllStringSubmatch(input, -1)
-	if len(matches) != 4 {
+	expectedPlayerCount := 4
+	if len(matches) != expectedPlayerCount {
 		return nil, errors.New("invalid number of players")
 	}
 	var players []*model.PlayerResult
 	for _, match := range matches {
+		//nolint:mnd // We need to check if the match has at least 2 groups
 		if len(match) > 2 {
 			score, err := strconv.Atoi(match[2])
 			if err != nil {

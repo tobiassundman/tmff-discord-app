@@ -1,13 +1,14 @@
 package services_test
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 	"tmff-discord-app/internal/app/repository"
 	"tmff-discord-app/internal/app/services"
 	"tmff-discord-app/internal/app/services/model"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const K = 64

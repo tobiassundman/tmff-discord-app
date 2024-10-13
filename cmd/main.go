@@ -2,10 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
-	"github.com/playwright-community/playwright-go"
 	"log"
 	"time"
 	"tmff-discord-app/internal/app/client"
@@ -14,6 +10,11 @@ import (
 	"tmff-discord-app/internal/app/services"
 	"tmff-discord-app/internal/controller"
 	"tmff-discord-app/pkg/database"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+	"github.com/playwright-community/playwright-go"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 		log.Fatalf("could not parse QUERY_TIMEOUT: %v", err)
 	}
 
-	dbx, err := setupDatabase(err, conf)
+	dbx := setupDatabase(conf)
 
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
 	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, conf.CurrentSeason)
@@ -42,11 +43,20 @@ func main() {
 
 	// Install playwright
 	err = playwright.Install()
+	if err != nil {
+		log.Printf("could not install playwright: %v", err)
+		return
+	}
 	pw, err := playwright.Run()
 	if err != nil {
 		log.Fatalf("could not start playwright: %v", err)
 	}
-	defer pw.Stop()
+	defer func(pw *playwright.Playwright) {
+		stopErr := pw.Stop()
+		if stopErr != nil {
+			log.Printf("could not stop playwright: %v", stopErr)
+		}
+	}(pw)
 	browser, err := pw.Chromium.Launch()
 	if err != nil {
 		log.Fatalf("could not launch browser: %v", err)
@@ -76,7 +86,7 @@ func main() {
 	select {}
 }
 
-func setupDatabase(err error, conf *config.Config) (*sqlx.DB, error) {
+func setupDatabase(conf *config.Config) *sqlx.DB {
 	db, err := sql.Open("sqlite3", conf.DBFile)
 	if err != nil {
 		log.Fatalf("could not open database: %v", err)
@@ -95,5 +105,6 @@ func setupDatabase(err error, conf *config.Config) (*sqlx.DB, error) {
 	} else if err != nil {
 		log.Fatalf("could not migrate database: %v", err)
 	}
-	return dbx, err
+
+	return dbx
 }

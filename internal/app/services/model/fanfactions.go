@@ -11,6 +11,8 @@ const (
 )
 
 // Map to and from string.
+//
+//nolint:gochecknoglobals // Map to and from string.
 var fanFactionSettingMap = map[string]FanFactionSetting{
 	"Off":                  Off,
 	"On - with Fire & Ice": On,
