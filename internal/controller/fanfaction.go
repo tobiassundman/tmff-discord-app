@@ -91,7 +91,7 @@ func (g *FanFaction) FanFactionCommands() (
 func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	g.commandLock.Lock()
 	defer g.commandLock.Unlock()
-	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
+	rateLimitUser := g.rateLimitUser(s, i.Member.User.ID, i.Member.Roles)
 	if rateLimitUser {
 		err := errors.New("you are limited to one command per hour, ask a moderator to issue the command for you")
 		g.respondWithError(s, i, err)
@@ -130,7 +130,7 @@ func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCre
 		return
 	}
 
-	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
+	rateLimitUser := g.rateLimitUser(s, i.Member.User.ID, i.Member.Roles)
 	if rateLimitUser {
 		err := errors.New("you are limited to one command per hour, ask a moderator to issue the command for you")
 		g.respondWithError(s, i, err)
@@ -377,11 +377,8 @@ func getMessageIDContaining(s *discordgo.Session, channelID, searchString string
 	return "", fmt.Errorf("message containing %s not found", searchString)
 }
 
-func (g *FanFaction) rateLimitUser(discordID string, roles []string) bool {
-	g.commandLock.Lock()
-	defer g.commandLock.Unlock()
-
-	if g.hasRole(nil, roles, "Moderator") {
+func (g *FanFaction) rateLimitUser(s *discordgo.Session, discordID string, roles []string) bool {
+	if g.hasRole(s, roles, "Moderator") {
 		return false
 	}
 

@@ -33,7 +33,7 @@ func (d *Discord) Initialize(
 		return errors.Wrap(err, "could not open discord connection")
 	}
 
-	d.client.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	d.client.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 

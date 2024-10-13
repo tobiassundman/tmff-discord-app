@@ -23,7 +23,12 @@ type Game struct {
 	kValue     float64
 }
 
-func NewGame(playerRepo *repository.Player, gameRepo *repository.Game, seasonRepo *repository.Season, kValue int) *Game {
+func NewGame(
+	playerRepo *repository.Player,
+	gameRepo *repository.Game,
+	seasonRepo *repository.Season,
+	kValue int,
+) *Game {
 	return &Game{
 		playerRepo: playerRepo,
 		gameRepo:   gameRepo,

@@ -9,6 +9,10 @@ help:
 	@echo "------------------------------------------------------------------------"
 	@grep -E '^[a-zA-Z0-9_/%\-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+.PHONMY: build_binary
+build_binary: ## Build the application
+	GOOS=linux GOARCH=amd64 go build -o tmff cmd/main.go
+
 .PHONY: tools
 make tools: ## Install required tools
 	go install github.com/go-bindata/go-bindata/go-bindata@latest

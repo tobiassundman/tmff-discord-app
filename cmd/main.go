@@ -17,6 +17,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
+//nolint:funlen // This is fine :)
 func main() {
 	conf, err := config.ReadConfig("config.yaml")
 	if err != nil {
@@ -28,7 +29,11 @@ func main() {
 		log.Fatalf("could not parse QUERY_TIMEOUT: %v", err)
 	}
 
-	dbx := setupDatabase(conf)
+	dbx, err := setupDatabase(conf)
+	if err != nil {
+		log.Printf("could not setup database: %v", err)
+		return
+	}
 
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
 	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, conf.CurrentSeason)
@@ -39,7 +44,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not create discord client: %v", err)
 	}
-	defer discordClient.Close()
+	defer func(discordClient *client.Discord) {
+		closeErr := discordClient.Close()
+		if closeErr != nil {
+			log.Printf("could not close discord client: %v", closeErr)
+		}
+	}(discordClient)
 
 	// Install playwright
 	err = playwright.Install()
@@ -49,7 +59,8 @@ func main() {
 	}
 	pw, err := playwright.Run()
 	if err != nil {
-		log.Fatalf("could not start playwright: %v", err)
+		log.Printf("could not start playwright: %v", err)
+		return
 	}
 	defer func(pw *playwright.Playwright) {
 		stopErr := pw.Stop()
@@ -59,25 +70,43 @@ func main() {
 	}(pw)
 	browser, err := pw.Chromium.Launch()
 	if err != nil {
-		log.Fatalf("could not launch browser: %v", err)
+		log.Printf("could not launch browser: %v", err)
+		return
 	}
-	defer browser.Close()
+	defer func(browser playwright.Browser) {
+		closeErr := browser.Close()
+		if closeErr != nil {
+			log.Printf("could not close browser: %v", closeErr)
+		}
+	}(browser)
 
 	pages := services.NewPages(browser, conf.MaxGameAgeDays)
-	defer pages.Close()
+	defer func(pages *services.Pages) {
+		closeErr := pages.Close()
+		if closeErr != nil {
+			log.Printf("could not close pages: %v", closeErr)
+		}
+	}(pages)
 
 	gameScraper, err := pages.NewGameScraper()
 	if err != nil {
-		log.Fatalf("could not create game scraper: %v", err)
+		log.Printf("could not create game scraper: %v", err)
+		return
 	}
-	defer gameScraper.Close()
+	defer func(gameScraper *services.GameScraper) {
+		closeErr := gameScraper.Close()
+		if closeErr != nil {
+			log.Printf("could not close game scraper: %v", closeErr)
+		}
+	}(gameScraper)
 
 	fanFactionController := controller.NewFanFaction(conf, playerRepo, gameService, leaderboardService, gameScraper)
 	commands, commandHandlers := fanFactionController.FanFactionCommands()
 
 	err = discordClient.Initialize(commands, commandHandlers)
 	if err != nil {
-		log.Fatalf("could not initialize discord client: %v", err)
+		log.Printf("could not initialize discord client: %v", err)
+		return
 	}
 
 	log.Println("Bot is running. Press CTRL+C to exit.")
@@ -86,25 +115,25 @@ func main() {
 	select {}
 }
 
-func setupDatabase(conf *config.Config) *sqlx.DB {
+func setupDatabase(conf *config.Config) (*sqlx.DB, error) {
 	db, err := sql.Open("sqlite3", conf.DBFile)
 	if err != nil {
-		log.Fatalf("could not open database: %v", err)
+		return nil, errors.Wrap(err, "could not open database")
 	}
 	dbx := sqlx.NewDb(db, "sqlite3")
 
 	// Enable foreign key constraints
 	_, err = db.Exec("PRAGMA foreign_keys = ON")
 	if err != nil {
-		log.Fatal("Failed to enable foreign key constraints:", err)
+		return nil, errors.Wrap(err, "could not enable foreign key constraints")
 	}
 
 	err = database.Migrate(db, "./db/migrations")
 	if errors.Is(err, migrate.ErrNoChange) {
 		log.Println("database is up to date")
 	} else if err != nil {
-		log.Fatalf("could not migrate database: %v", err)
+		return nil, errors.Wrap(err, "could not migrate database")
 	}
 
-	return dbx
+	return dbx, nil
 }
