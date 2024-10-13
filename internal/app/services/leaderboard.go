@@ -18,7 +18,7 @@ func NewLeaderboard(seasonRepo *repository.Season, playerRepo *repository.Player
 	}
 }
 
-func (l *Leaderboard) GetLeaderboard() ([]*model.LeaderboardEntry, error) {
+func (l *Leaderboard) GetLeaderboard() (*model.Leaderboard, error) {
 	seasonParticipants, err := l.seasonRepo.GetAll()
 	if err != nil {
 		return nil, err
@@ -52,5 +52,7 @@ func (l *Leaderboard) GetLeaderboard() ([]*model.LeaderboardEntry, error) {
 		}
 	}
 
-	return leaderboardEntries, nil
+	return &model.Leaderboard{
+		Entries: leaderboardEntries,
+	}, nil
 }

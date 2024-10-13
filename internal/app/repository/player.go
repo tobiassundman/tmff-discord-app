@@ -16,7 +16,7 @@ var (
 const (
 	getPlayerQuery     = `SELECT name, bga_id, created_at FROM players WHERE name = $1`
 	insertPlayerQuery  = `INSERT INTO players (name, bga_id) VALUES ($1, $2)`
-	getAllPlayersQuery = `SELECT name, bga_id, created_at FROM players`
+	getAllPlayersQuery = `SELECT name, bga_id, created_at FROM players ORDER BY name ASC`
 )
 
 type Player struct {

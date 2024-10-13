@@ -21,12 +21,10 @@ type GameOutcome struct {
 
 func (g *GameOutcome) String() string {
 	var output string
-	output += fmt.Sprintf("Game ID: %s\n", g.ID)
+	output += fmt.Sprintf("https://boardgamearena.com/table?table=%s\n", g.ID)
 	for _, player := range g.Players {
-		output += fmt.Sprintf("PlayerResult: %s, Score: %d\n", player.Name, player.Score)
+		output += fmt.Sprintf("%s, Score: %d\n", player.Name, player.Score)
 	}
-	output += fmt.Sprintf("Fan Faction Setting: %s\n", g.FanFactionSetting)
-	output += fmt.Sprintf("Creation Time: %s\n", g.CreationTime)
 	return output
 }
 

@@ -57,16 +57,17 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, 
 		return nil, errors.Wrap(err, "failed to get player results")
 	}
 
-	creationTime, err := gs.getCreationTime()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get creation time")
-	}
+	//creationTime, err := gs.getCreationTime()
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "failed to get creation time")
+	//}
 
+	timeNow := time.Now()
 	outcome := &model.GameOutcome{
 		ID:                tableID,
 		Players:           playerResults,
 		FanFactionSetting: model.FanFactionSettingFromString(fanFactionSetting),
-		CreationTime:      creationTime,
+		CreationTime:      &timeNow,
 	}
 	err = outcome.Validate(gs.maxGameAgeDays)
 	if err != nil {

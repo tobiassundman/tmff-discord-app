@@ -7,14 +7,19 @@ import (
 )
 
 type Config struct {
-	QueryTimeout   string `yaml:"queryTimeout"`
-	DBFile         string `yaml:"dbFile"`
-	MaxGameAgeDays int    `yaml:"maxGameAgeDays"`
-	CurrentSeason  string `yaml:"currentSeason"`
-	EloKFactor     int    `yaml:"eloKFactor"`
-	AppID          string `yaml:"appID"`
-	DiscordToken   string `yaml:"discordToken"`
-	PublicKey      string `yaml:"publicKey"`
+	QueryTimeout   string        `yaml:"queryTimeout"`
+	DBFile         string        `yaml:"dbFile"`
+	MaxGameAgeDays int           `yaml:"maxGameAgeDays"`
+	CurrentSeason  string        `yaml:"currentSeason"`
+	EloKFactor     int           `yaml:"eloKFactor"`
+	Discord        DiscordConfig `yaml:"discord"`
+}
+
+type DiscordConfig struct {
+	AppID     string `yaml:"appID"`
+	Token     string `yaml:"token"`
+	GuildID   string `yaml:"guildID"`
+	PublicKey string `yaml:"publicKey"`
 }
 
 func ReadConfig(configFile string) (*Config, error) {

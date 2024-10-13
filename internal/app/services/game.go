@@ -34,7 +34,7 @@ func NewGame(playerRepo *repository.Player, gameRepo *repository.Game, seasonRep
 func (g *Game) RegisterGame(gameOutcome *model.GameOutcome) ([]*model.PlayerEloResult, error) {
 	_, err := g.gameRepo.GetGameWithParticipants(gameOutcome.ID)
 	if !errors.Is(err, repository.ErrGameNotFound) {
-		return nil, errors.Wrap(err, "game is already registered")
+		return nil, errors.New("game already registered")
 	}
 
 	registeredPlayers, err := g.getRegisteredPlayers(gameOutcome)
