@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"github.com/bwmarrin/discordgo"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -28,24 +27,7 @@ func main() {
 		log.Fatalf("could not parse QUERY_TIMEOUT: %v", err)
 	}
 
-	db, err := sql.Open("sqlite3", conf.DBFile)
-	if err != nil {
-		log.Fatalf("could not open database: %v", err)
-	}
-	dbx := sqlx.NewDb(db, "sqlite3")
-
-	// Enable foreign key constraints
-	_, err = db.Exec("PRAGMA foreign_keys = ON")
-	if err != nil {
-		log.Fatal("Failed to enable foreign key constraints:", err)
-	}
-
-	err = database.Migrate(db, "./db/migrations")
-	if errors.Is(err, migrate.ErrNoChange) {
-		log.Println("database is up to date")
-	} else if err != nil {
-		log.Fatalf("could not migrate database: %v", err)
-	}
+	dbx, err := setupDatabase(err, conf)
 
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
 	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, conf.CurrentSeason)
@@ -58,6 +40,7 @@ func main() {
 	}
 	defer discordClient.Close()
 
+	// Install playwright
 	err = playwright.Install()
 	pw, err := playwright.Run()
 	if err != nil {
@@ -80,43 +63,7 @@ func main() {
 	defer gameScraper.Close()
 
 	fanFactionController := controller.NewFanFaction(conf, playerRepo, gameService, leaderboardService, gameScraper)
-
-	commands := []*discordgo.ApplicationCommand{
-		{
-			Name:        "register-game",
-			Description: "There has to be at least two registered participants in the game.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "game-link",
-					Description: "The link to the game on Board Game Arena, e.g. https://boardgamearena.com/table?table=571581855",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:        "add-player",
-			Description: "Add a player.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "name",
-					Description: "The username of the player.",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "id",
-					Description: "The BGA ID of the player.",
-					Required:    true,
-				},
-			},
-		},
-	}
-	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		"register-game": fanFactionController.RegisterGame,
-		"add-player":    fanFactionController.AddPlayer,
-	}
+	commands, commandHandlers := fanFactionController.FanFactionCommands()
 
 	err = discordClient.Initialize(commands, commandHandlers)
 	if err != nil {
@@ -127,4 +74,26 @@ func main() {
 
 	// Await a signal to exit
 	select {}
+}
+
+func setupDatabase(err error, conf *config.Config) (*sqlx.DB, error) {
+	db, err := sql.Open("sqlite3", conf.DBFile)
+	if err != nil {
+		log.Fatalf("could not open database: %v", err)
+	}
+	dbx := sqlx.NewDb(db, "sqlite3")
+
+	// Enable foreign key constraints
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		log.Fatal("Failed to enable foreign key constraints:", err)
+	}
+
+	err = database.Migrate(db, "./db/migrations")
+	if errors.Is(err, migrate.ErrNoChange) {
+		log.Println("database is up to date")
+	} else if err != nil {
+		log.Fatalf("could not migrate database: %v", err)
+	}
+	return dbx, err
 }

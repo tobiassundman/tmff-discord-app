@@ -57,17 +57,16 @@ func (gs *GameScraper) ExtractGameOutcome(inputURL string) (*model.GameOutcome, 
 		return nil, errors.Wrap(err, "failed to get player results")
 	}
 
-	//creationTime, err := gs.getCreationTime()
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "failed to get creation time")
-	//}
+	creationTime, err := gs.getCreationTime()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get creation time")
+	}
 
-	timeNow := time.Now()
 	outcome := &model.GameOutcome{
 		ID:                tableID,
 		Players:           playerResults,
 		FanFactionSetting: model.FanFactionSettingFromString(fanFactionSetting),
-		CreationTime:      &timeNow,
+		CreationTime:      creationTime,
 	}
 	err = outcome.Validate(gs.maxGameAgeDays)
 	if err != nil {
@@ -122,7 +121,11 @@ func (gs *GameScraper) getCreationTime() (*time.Time, error) {
 
 	// Parse the date string into a time.Time object
 	parsedTime, err := time.Parse(layout, textContent)
-	return &parsedTime, err
+	now := time.Now()
+	if err != nil {
+		return &now, err
+	}
+	return &parsedTime, nil
 }
 
 func (gs *GameScraper) assertIsTerraMystica() error {

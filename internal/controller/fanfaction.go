@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 	"tmff-discord-app/internal/app/config"
 	"tmff-discord-app/internal/app/repository"
 	repomodel "tmff-discord-app/internal/app/repository/model"
@@ -20,6 +22,8 @@ type FanFaction struct {
 	leaderboardService *services.Leaderboard
 	gameScraper        *services.GameScraper
 	conf               *config.Config
+	commandLock        sync.Mutex
+	lastCommandByUser  map[string]time.Time
 }
 
 func NewFanFaction(conf *config.Config, playerRepo *repository.Player, gameService *services.Game, leaderboardService *services.Leaderboard, gameScraper *services.GameScraper) *FanFaction {
@@ -29,10 +33,59 @@ func NewFanFaction(conf *config.Config, playerRepo *repository.Player, gameServi
 		gameScraper:        gameScraper,
 		conf:               conf,
 		playerRepo:         playerRepo,
+		lastCommandByUser:  map[string]time.Time{},
 	}
 }
 
+func (g *FanFaction) FanFactionCommands() ([]*discordgo.ApplicationCommand, map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate)) {
+	commands := []*discordgo.ApplicationCommand{
+		{
+			Name:        "register-game",
+			Description: "There has to be at least two registered participants in the game.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "game-link",
+					Description: "The link to the game on Board Game Arena, e.g. https://boardgamearena.com/table?table=571581855",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "add-player",
+			Description: "Add a player.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "The username of the player.",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "id",
+					Description: "The BGA ID of the player.",
+					Required:    true,
+				},
+			},
+		},
+	}
+	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+		"register-game": g.RegisterGame,
+		"add-player":    g.AddPlayer,
+	}
+	return commands, commandHandlers
+}
+
 func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	g.commandLock.Lock()
+	defer g.commandLock.Unlock()
+	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
+	if rateLimitUser {
+		err := fmt.Errorf("you are limited to one command per hour, ask a moderator to issue the command for you")
+		g.respondWithError(s, i, err)
+		return
+	}
 	log.Println("registering game")
 
 	go func() {
@@ -55,46 +108,20 @@ func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.Interaction
 	}
 }
 
-func (g *FanFaction) sendErrorMessage(s *discordgo.Session, err error) {
-	log.Printf("could not register game: %v", err)
-	gamesChannelID, getChannelErr := getChannelIDByName(s, g.conf.Discord.GuildID, "games")
-	if getChannelErr != nil {
-		log.Printf("could not get games channel ID: %v", getChannelErr)
-	}
-	_, sendErr := s.ChannelMessageSend(gamesChannelID, "Error: "+err.Error())
-	if sendErr != nil {
-		log.Printf("could not send game outcome to games channel: %v", sendErr)
-	}
-}
-
-func (g *FanFaction) sendAsyncResponse(s *discordgo.Session, message string) {
-	gamesChannelID, getChannelErr := getChannelIDByName(s, g.conf.Discord.GuildID, "games")
-	if getChannelErr != nil {
-		log.Printf("could not get games channel ID: %v", getChannelErr)
-	}
-	_, sendErr := s.ChannelMessageSend(gamesChannelID, message)
-	if sendErr != nil {
-		log.Printf("could not send game outcome to games channel: %v", sendErr)
-	}
-}
-
-func (g *FanFaction) respondWithError(s *discordgo.Session, i *discordgo.InteractionCreate, err error) {
-	respondErr := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: err.Error(),
-		},
-	})
-	if respondErr != nil {
-		log.Printf("could not respond to interaction: %v", respondErr)
-	}
-}
-
 func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	g.commandLock.Lock()
+	defer g.commandLock.Unlock()
 	log.Println("adding player")
 
 	if !g.hasRole(s, i.Member.Roles, "Moderator") {
 		err := fmt.Errorf("you do not have permission to add a player")
+		g.respondWithError(s, i, err)
+		return
+	}
+
+	rateLimitUser := g.rateLimitUser(i.Member.User.ID, i.Member.Roles)
+	if rateLimitUser {
+		err := fmt.Errorf("you are limited to one command per hour, ask a moderator to issue the command for you")
 		g.respondWithError(s, i, err)
 		return
 	}
@@ -145,6 +172,41 @@ func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCre
 	err = upsertMessage(s, registeredPlayersChannelID, "Players", formatPlayers(players))
 	if err != nil {
 		log.Printf("could not update players: %v", err)
+	}
+}
+
+func (g *FanFaction) sendErrorMessage(s *discordgo.Session, err error) {
+	log.Printf("could not register game: %v", err)
+	gamesChannelID, getChannelErr := getChannelIDByName(s, g.conf.Discord.GuildID, "games")
+	if getChannelErr != nil {
+		log.Printf("could not get games channel ID: %v", getChannelErr)
+	}
+	_, sendErr := s.ChannelMessageSend(gamesChannelID, "Error: "+err.Error())
+	if sendErr != nil {
+		log.Printf("could not send game outcome to games channel: %v", sendErr)
+	}
+}
+
+func (g *FanFaction) sendAsyncResponse(s *discordgo.Session, message string) {
+	gamesChannelID, getChannelErr := getChannelIDByName(s, g.conf.Discord.GuildID, "games")
+	if getChannelErr != nil {
+		log.Printf("could not get games channel ID: %v", getChannelErr)
+	}
+	_, sendErr := s.ChannelMessageSend(gamesChannelID, message)
+	if sendErr != nil {
+		log.Printf("could not send game outcome to games channel: %v", sendErr)
+	}
+}
+
+func (g *FanFaction) respondWithError(s *discordgo.Session, i *discordgo.InteractionCreate, err error) {
+	respondErr := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: err.Error(),
+		},
+	})
+	if respondErr != nil {
+		log.Printf("could not respond to interaction: %v", respondErr)
 	}
 }
 
@@ -294,4 +356,24 @@ func getMessageIDContaining(s *discordgo.Session, channelID, searchString string
 	}
 
 	return "", fmt.Errorf("message containing %s not found", searchString)
+}
+
+func (g *FanFaction) rateLimitUser(discordID string, roles []string) bool {
+	g.commandLock.Lock()
+	defer g.commandLock.Unlock()
+
+	if g.hasRole(nil, roles, "Moderator") {
+		return false
+	}
+
+	lastCommandTime, ok := g.lastCommandByUser[discordID]
+	if ok {
+		elapsed := time.Since(lastCommandTime)
+		if elapsed < 60*time.Minute {
+			return true
+		}
+	}
+
+	g.lastCommandByUser[discordID] = time.Now()
+	return false
 }
