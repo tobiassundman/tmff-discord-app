@@ -3,45 +3,30 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"strconv"
-	"time"
-	"tmff-discord-app/internal/app/repository"
-	"tmff-discord-app/internal/app/services"
-	"tmff-discord-app/pkg/database"
-	"tmff-discord-app/pkg/environment"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/playwright-community/playwright-go"
+	"log"
+	"time"
+	"tmff-discord-app/internal/app/config"
+	"tmff-discord-app/internal/app/repository"
+	"tmff-discord-app/internal/app/services"
+	"tmff-discord-app/pkg/database"
 )
 
 func main() {
-	var (
-		queryTimeoutSeconds  = environment.GetEnvOrDefault("QUERY_TIMEOUT", "5s")
-		databaseFile         = environment.GetEnvOrDefault("DB_FILE", ":memory:")
-		maxGameAgeDaysString = environment.GetEnvOrDefault("MAX_GAME_AGE_DAYS", "60")
-		currentSeason        = environment.GetEnvOrDefault("CURRENT_SEASON", "First Fan Faction Season")
-		eloKFactor           = environment.GetEnvOrDefault("ELO_K_FACTOR", "64")
-	)
+	conf, err := config.ReadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("could not read config: %v", err)
+	}
 
-	parsedQueryTimeout, err := time.ParseDuration(queryTimeoutSeconds)
+	parsedQueryTimeout, err := time.ParseDuration(conf.QueryTimeout)
 	if err != nil {
 		log.Fatalf("could not parse QUERY_TIMEOUT: %v", err)
 	}
 
-	maxGameAgeDays, err := strconv.Atoi(maxGameAgeDaysString)
-	if err != nil {
-		log.Fatalf("could not parse MAX_GAME_AGE_DAYS: %v", err)
-	}
-
-	eloKFactorParsed, err := strconv.Atoi(eloKFactor)
-	if err != nil {
-		log.Fatalf("could not parse ELO_K_FACTOR: %v", err)
-	}
-
-	db, err := sql.Open("sqlite3", databaseFile)
+	db, err := sql.Open("sqlite3", conf.DBFile)
 	if err != nil {
 		log.Fatalf("could not open database: %v", err)
 	}
@@ -63,9 +48,9 @@ func main() {
 
 	// TODO: Use the repository and services
 	playerRepo := repository.NewPlayer(dbx, &parsedQueryTimeout)
-	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, currentSeason)
-	gameRepo := repository.NewGame(dbx, &parsedQueryTimeout, currentSeason)
-	gameService := services.NewGame(playerRepo, gameRepo, seasonRepo, eloKFactorParsed)
+	seasonRepo := repository.NewSeason(dbx, &parsedQueryTimeout, conf.CurrentSeason)
+	gameRepo := repository.NewGame(dbx, &parsedQueryTimeout, conf.CurrentSeason)
+	gameService := services.NewGame(playerRepo, gameRepo, seasonRepo, conf.EloKFactor)
 	fmt.Println(gameService)
 
 	err = playwright.Install()
@@ -80,7 +65,7 @@ func main() {
 	}
 	defer browser.Close()
 
-	pages := services.NewPages(browser, maxGameAgeDays)
+	pages := services.NewPages(browser, conf.MaxGameAgeDays)
 	defer pages.Close()
 
 	gameScraper, err := pages.NewGameScraper()
