@@ -39,3 +39,7 @@ mock: ## Generate mocks
 .PHONY: test
 test: ## Runs unit tests
 	CGO_ENABLED=1 go run gotest.tools/gotestsum@latest -- -race ./...
+
+.PHONY: compile_for_pi
+compile_for_pi: ## Compiles the application for Raspberry Pi
+	./scripts/build-for-pi.sh
