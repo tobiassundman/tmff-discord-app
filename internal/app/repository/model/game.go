@@ -18,7 +18,7 @@ type Game struct {
 type GameParticipant struct {
 	ID        int       `db:"id"`
 	GameID    string    `db:"game_id"`
-	PlayerID  string    `db:"player_id"`
+	PlayerID  int       `db:"player_id"`
 	Score     int       `db:"score"`
 	EloChange int       `db:"elo_change"`
 	EloBefore int       `db:"elo_before"`

@@ -33,25 +33,25 @@ func TestGame(t *testing.T) {
 		gameID := "1"
 		participants := []*model.GameParticipant{
 			{
-				PlayerID:  "1",
+				PlayerID:  1,
 				Score:     110,
 				EloChange: 20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "2",
+				PlayerID:  2,
 				Score:     130,
 				EloChange: -20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "3",
+				PlayerID:  3,
 				Score:     100,
 				EloChange: -10,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "4",
+				PlayerID:  4,
 				Score:     140,
 				EloChange: 50,
 				EloBefore: 1000,
@@ -66,19 +66,19 @@ func TestGame(t *testing.T) {
 		assert.Equal(t, "First Fan Faction Season", game.SeasonName)
 		assert.Len(t, game.Participants, 4)
 
-		assert.Equal(t, "1", game.Participants[0].PlayerID)
+		assert.Equal(t, 1, game.Participants[0].PlayerID)
 		assert.Equal(t, 110, game.Participants[0].Score)
 		assert.Equal(t, 20, game.Participants[0].EloChange)
 		assert.Equal(t, 1000, game.Participants[0].EloBefore)
-		assert.Equal(t, "2", game.Participants[1].PlayerID)
+		assert.Equal(t, 2, game.Participants[1].PlayerID)
 		assert.Equal(t, 130, game.Participants[1].Score)
 		assert.Equal(t, -20, game.Participants[1].EloChange)
 		assert.Equal(t, 1000, game.Participants[1].EloBefore)
-		assert.Equal(t, "3", game.Participants[2].PlayerID)
+		assert.Equal(t, 3, game.Participants[2].PlayerID)
 		assert.Equal(t, 100, game.Participants[2].Score)
 		assert.Equal(t, -10, game.Participants[2].EloChange)
 		assert.Equal(t, 1000, game.Participants[2].EloBefore)
-		assert.Equal(t, "4", game.Participants[3].PlayerID)
+		assert.Equal(t, 4, game.Participants[3].PlayerID)
 		assert.Equal(t, 140, game.Participants[3].Score)
 		assert.Equal(t, 50, game.Participants[3].EloChange)
 		assert.Equal(t, 1000, game.Participants[3].EloBefore)
@@ -102,25 +102,25 @@ func TestGame(t *testing.T) {
 		gameID := "1"
 		participants := []*model.GameParticipant{
 			{
-				PlayerID:  "1",
+				PlayerID:  1,
 				Score:     110,
 				EloChange: 20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "2",
+				PlayerID:  2,
 				Score:     130,
 				EloChange: -20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "3",
+				PlayerID:  3,
 				Score:     100,
 				EloChange: -10,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "4",
+				PlayerID:  4,
 				Score:     140,
 				EloChange: 50,
 				EloBefore: 1000,
@@ -154,25 +154,25 @@ func TestGame(t *testing.T) {
 		gameID := "1"
 		participants := []*model.GameParticipant{
 			{
-				PlayerID:  "1",
+				PlayerID:  1,
 				Score:     110,
 				EloChange: 20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "2",
+				PlayerID:  2,
 				Score:     130,
 				EloChange: -20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "3",
+				PlayerID:  3,
 				Score:     100,
 				EloChange: -10,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "4",
+				PlayerID:  4,
 				Score:     140,
 				EloChange: 50,
 				EloBefore: 1000,
@@ -206,25 +206,25 @@ func TestGame(t *testing.T) {
 		gameID := "1"
 		participants := []*model.GameParticipant{
 			{
-				PlayerID:  "1",
+				PlayerID:  1,
 				Score:     110,
 				EloChange: 20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "2",
+				PlayerID:  2,
 				Score:     130,
 				EloChange: -20,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "3",
+				PlayerID:  3,
 				Score:     100,
 				EloChange: -10,
 				EloBefore: 1000,
 			},
 			{
-				PlayerID:  "4",
+				PlayerID:  4,
 				Score:     140,
 				EloChange: 50,
 				EloBefore: 1000,

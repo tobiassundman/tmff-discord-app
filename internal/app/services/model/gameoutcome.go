@@ -19,9 +19,13 @@ type GameOutcome struct {
 	CreationTime      *time.Time
 }
 
+func (g *GameOutcome) BGALink() string {
+	return fmt.Sprintf("https://boardgamearena.com/table?table=%s", g.ID)
+}
+
 func (g *GameOutcome) String() string {
 	var output string
-	output += fmt.Sprintf("https://boardgamearena.com/table?table=%s\n", g.ID)
+	output += g.BGALink()
 	for _, player := range g.Players {
 		output += fmt.Sprintf("%s, Score: %d\n", player.Name, player.Score)
 	}

@@ -1,6 +1,7 @@
 -- players table contains all players that participate in the league
 CREATE TABLE IF NOT EXISTS players (
-    bga_id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bga_id TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -15,13 +16,13 @@ CREATE TABLE IF NOT EXISTS seasons (
 CREATE TABLE IF NOT EXISTS season_participants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     season_name TEXT NOT NULL,
-    player_id TEXT NOT NULL,
+    player_id INTEGER NOT NULL,
     elo INTEGER NOT NULL,
     games_played INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     UNIQUE(season_name, player_id),
     FOREIGN KEY(season_name) REFERENCES seasons(name),
-    FOREIGN KEY(player_id) REFERENCES players(bga_id)
+    FOREIGN KEY(player_id) REFERENCES players(id)
 );
 
 -- games table contains all games that have been played in a specific season
@@ -36,12 +37,12 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE TABLE IF NOT EXISTS game_participants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id TEXT NOT NULL,
-    player_id TEXT NOT NULL,
+    player_id INTEGER NOT NULL,
     score INTEGER NOT NULL,
     elo_change INTEGER NOT NULL,
     elo_before INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     UNIQUE(game_id, player_id),
     FOREIGN KEY(game_id) REFERENCES games(bga_id),
-    FOREIGN KEY(player_id) REFERENCES players(bga_id)
+    FOREIGN KEY(player_id) REFERENCES players(id)
 );

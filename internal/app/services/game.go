@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type PlayerNameToID map[string]string
-type PlayerIDToName map[string]string
-type PlayerIDToCurrentElo map[string]int
-type PlayerIDToEloChange map[string]int
-type PlayerIDToScore map[string]int
+type PlayerNameToID map[string]int
+type PlayerIDToName map[int]string
+type PlayerIDToCurrentElo map[int]int
+type PlayerIDToEloChange map[int]int
+type PlayerIDToScore map[int]int
 
 type Game struct {
 	playerRepo *repository.Player
@@ -100,7 +100,7 @@ func (g *Game) RegisterGame(gameOutcome *model.GameOutcome) ([]*model.PlayerEloR
 }
 
 func playerScoreByID(gameOutcome *model.GameOutcome, idMap PlayerNameToID) PlayerIDToScore {
-	playerScore := make(map[string]int)
+	playerScore := make(PlayerIDToScore)
 	for _, player := range gameOutcome.Players {
 		playerScore[idMap[player.Name]] = player.Score
 	}
@@ -108,7 +108,7 @@ func playerScoreByID(gameOutcome *model.GameOutcome, idMap PlayerNameToID) Playe
 }
 
 func playerNameByID(idMap PlayerNameToID) PlayerIDToName {
-	playerName := make(map[string]string)
+	playerName := make(PlayerIDToName)
 	for name, id := range idMap {
 		playerName[id] = name
 	}
@@ -120,7 +120,7 @@ func (g *Game) getEloChangeForPlayers(
 	participantsRating PlayerIDToCurrentElo,
 	idMap PlayerNameToID,
 ) PlayerIDToEloChange {
-	eloChangeForPlayerIDs := make(map[string]int)
+	eloChangeForPlayerIDs := make(PlayerIDToEloChange)
 	for _, mainPlayer := range gameOutcome.Players {
 		if _, ok := participantsRating[idMap[mainPlayer.Name]]; !ok {
 			continue
@@ -162,7 +162,7 @@ func (g *Game) getRegisteredPlayers(gameOutcome *model.GameOutcome) (PlayerNameT
 		if getPlayerErr != nil {
 			return nil, getPlayerErr
 		}
-		registeredPlayers[player.Name] = registeredPlayer.BGAID
+		registeredPlayers[player.Name] = registeredPlayer.ID
 	}
 	return registeredPlayers, nil
 }
@@ -176,7 +176,7 @@ func (g *Game) getPlayerElos(
 		return nil, errors.Wrap(err, "failed to get season participants")
 	}
 
-	participantsRating := make(map[string]int)
+	participantsRating := make(PlayerIDToCurrentElo)
 	for _, gameParticipant := range gameOutcome.Players {
 		_, ok := registeredPlayers[gameParticipant.Name]
 		if !ok {

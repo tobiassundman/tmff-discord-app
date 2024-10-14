@@ -55,7 +55,7 @@ func (s *Season) GetAll() ([]*model.SeasonParticipant, error) {
 	return participants, nil
 }
 
-func (s *Season) UpsertSeasonParticipant(playerID string, eloChange int) (*model.SeasonParticipant, error) {
+func (s *Season) UpsertSeasonParticipant(playerID int, eloChange int) (*model.SeasonParticipant, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return nil, err

@@ -10,7 +10,7 @@ type MatchResult struct {
 
 type PlayerEloResult struct {
 	Name      string
-	ID        string
+	ID        int
 	Score     int
 	EloBefore int
 	EloChange int

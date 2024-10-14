@@ -102,7 +102,7 @@ func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.Interaction
 	go func() {
 		responseMessage, err := g.registerGameAsync(s, i)
 		if err != nil {
-			g.sendErrorMessage(s, err)
+			g.sendErrorMessage(s, err, i.Member.User.ID)
 		} else {
 			g.sendAsyncResponse(s, responseMessage)
 		}
@@ -111,7 +111,7 @@ func (g *FanFaction) RegisterGame(s *discordgo.Session, i *discordgo.Interaction
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Game being registered",
+			Content: fmt.Sprintf("<@%s> registering game, please wait", i.Member.User.ID),
 		},
 	})
 	if err != nil {
@@ -157,7 +157,7 @@ func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCre
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Player added",
+			Content: fmt.Sprintf("<@%s> added player %s with ID %s", i.Member.User.ID, playerName, playerID),
 		},
 	})
 	if err != nil {
@@ -186,13 +186,13 @@ func (g *FanFaction) AddPlayer(s *discordgo.Session, i *discordgo.InteractionCre
 	}
 }
 
-func (g *FanFaction) sendErrorMessage(s *discordgo.Session, err error) {
+func (g *FanFaction) sendErrorMessage(s *discordgo.Session, err error, playerID string) {
 	log.Printf("could not register game: %v", err)
 	gamesChannelID, getChannelErr := getChannelIDByName(s, g.conf.Discord.GuildID, "games")
 	if getChannelErr != nil {
 		log.Printf("could not get games channel ID: %v", getChannelErr)
 	}
-	_, sendErr := s.ChannelMessageSend(gamesChannelID, "Error: "+err.Error())
+	_, sendErr := s.ChannelMessageSend(gamesChannelID, fmt.Sprintf("<@%s> Error: %s", playerID, err.Error()))
 	if sendErr != nil {
 		log.Printf("could not send game outcome to games channel: %v", sendErr)
 	}
@@ -213,7 +213,7 @@ func (g *FanFaction) respondWithError(s *discordgo.Session, i *discordgo.Interac
 	respondErr := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: err.Error(),
+			Content: fmt.Sprintf("<@%s> %s", i.Member.User.ID, err.Error()),
 		},
 	})
 	if respondErr != nil {
@@ -280,11 +280,12 @@ func (g *FanFaction) registerGameAsync(s *discordgo.Session, i *discordgo.Intera
 		return "", errors.Wrap(err, "could not update leaderboard")
 	}
 
-	return formatGameResult(gameResult), nil
+	return formatGameResult(i, gameResult, gameOutcome.BGALink()), nil
 }
 
-func formatGameResult(gameResult []*model.PlayerEloResult) string {
+func formatGameResult(i *discordgo.InteractionCreate, gameResult []*model.PlayerEloResult, bgaLink string) string {
 	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Thank you for registering a [game](%s) <@%s>!", bgaLink, i.Member.User.ID))
 	sb.WriteString("```\n")
 	sb.WriteString(fmt.Sprintf("%-5s %-20s %-10s\n", "Rank", "Name", "Elo Change"))
 	sb.WriteString(fmt.Sprintf("%-5s %-20s %-10s\n", "-----", "--------------------", "----------"))

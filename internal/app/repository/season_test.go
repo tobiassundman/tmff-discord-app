@@ -20,30 +20,30 @@ func TestGetAll(t *testing.T) {
 
 		err := playerRepo.InsertPlayer("Test Player1", "1")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.NoError(t, err)
 		err = playerRepo.InsertPlayer("Test Player2", "2")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("2", 2)
+		_, err = seasonRepo.UpsertSeasonParticipant(2, 2)
 		require.NoError(t, err)
 		err = playerRepo.InsertPlayer("Test Player3", "3")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("3", -3)
+		_, err = seasonRepo.UpsertSeasonParticipant(3, -3)
 		require.NoError(t, err)
 
 		result, err := seasonRepo.GetAll()
 		require.NoError(t, err)
 
 		assert.Len(t, result, 3)
-		assert.Equal(t, "1", result[1].PlayerID)
+		assert.Equal(t, 1, result[1].PlayerID)
 		assert.Equal(t, "First Fan Faction Season", result[1].SeasonName)
 		assert.Equal(t, 1001, result[1].Elo)
 		assert.Equal(t, 1, result[1].GamesPlayed)
-		assert.Equal(t, "2", result[0].PlayerID)
+		assert.Equal(t, 2, result[0].PlayerID)
 		assert.Equal(t, "First Fan Faction Season", result[1].SeasonName)
 		assert.Equal(t, 1002, result[0].Elo)
 		assert.Equal(t, 1, result[0].GamesPlayed)
-		assert.Equal(t, "3", result[2].PlayerID)
+		assert.Equal(t, 3, result[2].PlayerID)
 		assert.Equal(t, "First Fan Faction Season", result[2].SeasonName)
 		assert.Equal(t, 997, result[2].Elo)
 	})
@@ -60,7 +60,7 @@ func TestUpsert(t *testing.T) {
 
 		err := playerRepo.InsertPlayer("Test Player1", "1")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.NoError(t, err)
 	})
 
@@ -73,11 +73,11 @@ func TestUpsert(t *testing.T) {
 
 		err := playerRepo.InsertPlayer("Test Player1", "1")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 2)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 2)
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 3)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 3)
 		require.NoError(t, err)
 
 		result, err := seasonRepo.GetAll()
@@ -97,9 +97,9 @@ func TestUpsert(t *testing.T) {
 
 		err := playerRepo.InsertPlayer("Test Player1", "1")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", -10000)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, -10000)
 		require.NoError(t, err)
 
 		result, err := seasonRepo.GetAll()
@@ -115,7 +115,7 @@ func TestUpsert(t *testing.T) {
 		queryTimeout := 2 * time.Second
 		seasonRepo := repository.NewSeason(dbx, &queryTimeout, "First Fan Faction Season")
 
-		_, err := seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err := seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "player or season does not exist")
 	})
@@ -129,7 +129,7 @@ func TestUpsert(t *testing.T) {
 
 		err := playerRepo.InsertPlayer("Test Player1", "1")
 		require.NoError(t, err)
-		_, err = seasonRepo.UpsertSeasonParticipant("1", 1)
+		_, err = seasonRepo.UpsertSeasonParticipant(1, 1)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "player or season does not exist")
 	})

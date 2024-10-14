@@ -39,13 +39,12 @@ func (l *Leaderboard) GetLeaderboard() (*model.Leaderboard, error) {
 	for i, participant := range seasonParticipants {
 		var playerName string
 		for _, player := range players {
-			if player.BGAID == participant.PlayerID {
+			if player.ID == participant.PlayerID {
 				playerName = player.Name
 				break
 			}
 		}
 		leaderboardEntries[i] = &model.LeaderboardEntry{
-			PlayerID:    participant.PlayerID,
 			PlayerName:  playerName,
 			Elo:         participant.Elo,
 			GamesPlayed: participant.GamesPlayed,
