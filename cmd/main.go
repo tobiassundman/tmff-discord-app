@@ -6,9 +6,9 @@ import (
 	"time"
 	"tmff-discord-app/internal/app/client"
 	"tmff-discord-app/internal/app/config"
+	"tmff-discord-app/internal/app/controller"
 	"tmff-discord-app/internal/app/repository"
 	"tmff-discord-app/internal/app/services"
-	"tmff-discord-app/internal/controller"
 	"tmff-discord-app/pkg/database"
 
 	"github.com/golang-migrate/migrate/v4"
