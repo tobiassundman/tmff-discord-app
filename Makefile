@@ -40,6 +40,10 @@ mock: ## Generate mocks
 test: ## Runs unit tests
 	CGO_ENABLED=1 go run gotest.tools/gotestsum@latest -- -race ./...
 
+.PHONY: package_migration
+package_migration: ## Package the migration
+	go-bindata  -prefix "db/migrations/" -o db/bindata.go -pkg db db/migrations/...
+
 .PHONY: compile_for_pi
 compile_for_pi: ## Compiles the application for Raspberry Pi
 	./scripts/build-for-pi.sh

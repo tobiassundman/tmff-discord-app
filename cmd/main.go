@@ -1,20 +1,15 @@
 package main
 
 import (
-	"database/sql"
+	"github.com/playwright-community/playwright-go"
 	"log"
 	"time"
 	"tmff-discord-app/internal/app/client"
 	"tmff-discord-app/internal/app/config"
 	"tmff-discord-app/internal/app/controller"
+	"tmff-discord-app/internal/app/db"
 	"tmff-discord-app/internal/app/repository"
 	"tmff-discord-app/internal/app/services"
-	"tmff-discord-app/pkg/database"
-
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
-	"github.com/playwright-community/playwright-go"
 )
 
 //nolint:funlen // This is fine :)
@@ -29,7 +24,7 @@ func main() {
 		log.Fatalf("could not parse QUERY_TIMEOUT: %v", err)
 	}
 
-	dbx, err := setupDatabase(conf)
+	dbx, err := db.SetupDatabase(conf)
 	if err != nil {
 		log.Printf("could not setup database: %v", err)
 		return
@@ -113,27 +108,4 @@ func main() {
 
 	// Await a signal to exit
 	select {}
-}
-
-func setupDatabase(conf *config.Config) (*sqlx.DB, error) {
-	db, err := sql.Open("sqlite3", conf.DBFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not open database")
-	}
-	dbx := sqlx.NewDb(db, "sqlite3")
-
-	// Enable foreign key constraints
-	_, err = db.Exec("PRAGMA foreign_keys = ON")
-	if err != nil {
-		return nil, errors.Wrap(err, "could not enable foreign key constraints")
-	}
-
-	err = database.Migrate(db, "./db/migrations")
-	if errors.Is(err, migrate.ErrNoChange) {
-		log.Println("database is up to date")
-	} else if err != nil {
-		return nil, errors.Wrap(err, "could not migrate database")
-	}
-
-	return dbx, nil
 }
