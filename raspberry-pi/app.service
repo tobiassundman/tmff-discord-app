@@ -1,0 +1,16 @@
+[Unit]
+Description=tmff-discord-app
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStart=/home/tobias/tmff/run.sh
+WorkingDirectory=/home/tobias/tmff
+StandardOutput=append:/home/tobias/tmff/stdout.log
+StandardError=append:/home/tobias/tmff/stderr.log
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
