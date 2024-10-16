@@ -19,4 +19,8 @@ sudo ln -s ${PWD}/tmff-auto-update.service /etc/systemd/system/tmff-auto-update.
 sudo systemctl daemon-reload
 sudo systemctl enable tmff-auto-update.service
 sudo systemctl start tmff-auto-update.service
+
+chmod +x /home/tmffuser/backup-fanfactiondb.sh
+crontab -e
+0 8 * * * /home/tmffuser/backup-fanfactiondb.sh
 ```
