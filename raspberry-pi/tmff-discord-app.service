@@ -5,12 +5,12 @@ Description=tmff-discord-app
 Type=simple
 Restart=always
 RestartSec=5
-ExecStart=/home/tobias/tmff/run.sh
-WorkingDirectory=/home/tobias/tmff
-StandardOutput=append:/home/tobias/tmff/stdout.log
-StandardError=append:/home/tobias/tmff/stderr.log
+ExecStart=/home/tmffuser/tmff-discord-app
+WorkingDirectory=/home/tmffuser
+StandardOutput=append:/home/tmffuser/logs/stdout.log
+StandardError=append:/home/tmffuser/logs/stderr.log
 User=tmffuser
 Group=tmffuser
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

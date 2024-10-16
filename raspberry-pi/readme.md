@@ -6,10 +6,9 @@ https://suda.pl/quick-and-dirty-autodeployment-to-raspberry-pi/
 sudo useradd -m -s /bin/bash tmffuser
 
 # Set a password for the new user
-echo "tmffuser:password" | sudo chpasswd
+echo "tmffuser:<password>" | sudo chpasswd
 
-# Change the ownership of the application directory
-sudo chown -R tmffuser:tmffuser /home/tobias/tmff
+mkdir logs
 
 sudo ln -s ${PWD}/tmff-discord-app.service /etc/systemd/system/tmff-discord-app.service
 sudo systemctl daemon-reload

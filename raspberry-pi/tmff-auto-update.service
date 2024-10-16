@@ -5,10 +5,10 @@ Description=tmff-auto-update
 Type=simple
 Restart=always
 RestartSec=5
-ExecStart=/home/tobias/tmff/tmff-auto-update.sh
-WorkingDirectory=/home/tobias/tmff
-StandardOutput=append:/home/tobias/tmff/watcher-stdout.log
-StandardError=append:/home/tobias/tmff/watcher-stderr.log
+ExecStart=/home/tmffuser/tmff-auto-update.sh
+WorkingDirectory=/home/tmffuser
+StandardOutput=append:/home/tmffuser/logs/watcher-stdout.log
+StandardError=append:/home/tmffuser/logs/watcher-stderr.log
 User=root
 Group=root
 
