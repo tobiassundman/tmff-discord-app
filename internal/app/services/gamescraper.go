@@ -121,9 +121,10 @@ func (gs *GameScraper) getCreationTime() (*time.Time, error) {
 
 	// Parse the date string into a time.Time object
 	parsedTime, err := time.Parse(layout, textContent)
-	now := time.Now()
 	if err != nil {
-		return &now, err
+		// This means the game is recent enough not to have a date
+		now := time.Now()
+		return &now, nil
 	}
 	return &parsedTime, nil
 }
