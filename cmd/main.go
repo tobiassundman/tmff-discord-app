@@ -104,6 +104,12 @@ func main() {
 		return
 	}
 
+	err = fanFactionController.UpdateLeaderboard(discordClient.Client, conf.Discord.GuildID, "leaderboard")
+	if err != nil {
+		log.Printf("could not update leaderboard on start: %v", err)
+		return
+	}
+
 	log.Println("Bot is running. Press CTRL+C to exit.")
 
 	// Await a signal to exit

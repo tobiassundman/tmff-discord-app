@@ -15,11 +15,19 @@ type LeaderboardEntry struct {
 func (l *Leaderboard) String() string {
 	var output string
 	output += fmt.Sprintf("%s\n", "Leaderboard")
-	header := fmt.Sprintf("%-20s %10s %15s\n", "Player Name", "Elo", "Games Played")
+	header := fmt.Sprintf("%-4s %-20s %4s %12s\n", "Rank", "Player Name", "Elo", "Games Played")
 	output += header
-	output += fmt.Sprintf("%s\n", "-----------------------------------------------")
-	for _, entry := range l.Entries {
-		output += fmt.Sprintf("%-20s %10d %15d\n", entry.PlayerName, entry.Elo, entry.GamesPlayed)
+	output += fmt.Sprintf("%s\n", "-------------------------------------------")
+	for index, entry := range l.Entries {
+		playerNameTruncated := truncateString(entry.PlayerName, 20)
+		output += fmt.Sprintf("%-4d %-20s %4d %12d\n", index+1, playerNameTruncated, entry.Elo, entry.GamesPlayed)
 	}
 	return output
+}
+
+func truncateString(s string, length int) string {
+	if len(s) > length {
+		return s[:length]
+	}
+	return s
 }

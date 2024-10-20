@@ -275,7 +275,7 @@ func (g *FanFaction) registerGameAsync(s *discordgo.Session, i *discordgo.Intera
 		return "", errors.Wrap(err, "could not register game")
 	}
 
-	err = g.updateLeaderboard(s, i.GuildID, "leaderboard")
+	err = g.UpdateLeaderboard(s, i.GuildID, "leaderboard")
 	if err != nil {
 		return "", errors.Wrap(err, "could not update leaderboard")
 	}
@@ -324,7 +324,7 @@ func getChannelIDByName(s *discordgo.Session, guildID, channelName string) (stri
 	return "", fmt.Errorf("channel with name %s not found", channelName)
 }
 
-func (g *FanFaction) updateLeaderboard(s *discordgo.Session, guildID, channelName string) error {
+func (g *FanFaction) UpdateLeaderboard(s *discordgo.Session, guildID, channelName string) error {
 	leaderboard, err := g.leaderboardService.GetLeaderboard()
 	if err != nil {
 		return err

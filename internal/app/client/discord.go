@@ -9,17 +9,17 @@ import (
 )
 
 type Discord struct {
-	client *discordgo.Session
+	Client *discordgo.Session
 	conf   *config.Config
 }
 
 func NewDiscord(conf *config.Config) (*Discord, error) {
 	client, err := discordgo.New("Bot " + conf.Discord.Token)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create discord client")
+		return nil, errors.Wrap(err, "could not create discord Client")
 	}
 	return &Discord{
-		client: client,
+		Client: client,
 		conf:   conf,
 	}, nil
 }
@@ -28,23 +28,23 @@ func (d *Discord) Initialize(
 	commands []*discordgo.ApplicationCommand,
 	commandHandlers map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate),
 ) error {
-	err := d.client.Open()
+	err := d.Client.Open()
 	if err != nil {
 		return errors.Wrap(err, "could not open discord connection")
 	}
 
-	d.client.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
+	d.Client.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 
-	d.client.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	d.Client.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if handler, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			handler(s, i)
 		}
 	})
 
 	for _, command := range commands {
-		_, err = d.client.ApplicationCommandCreate(d.conf.Discord.AppID, d.conf.Discord.GuildID, command)
+		_, err = d.Client.ApplicationCommandCreate(d.conf.Discord.AppID, d.conf.Discord.GuildID, command)
 		if err != nil {
 			return errors.Wrap(err, "could not create application command")
 		}
@@ -53,6 +53,10 @@ func (d *Discord) Initialize(
 	return nil
 }
 
+func (d *Discord) UpdateLeaderboard() (string, error) {
+	return "", nil
+}
+
 func (d *Discord) Close() error {
-	return d.client.Close()
+	return d.Client.Close()
 }
