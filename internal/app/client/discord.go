@@ -2,6 +2,7 @@ package client
 
 import (
 	"log"
+	"time"
 	"tmff-discord-app/internal/app/config"
 
 	"github.com/bwmarrin/discordgo"
@@ -59,4 +60,11 @@ func (d *Discord) UpdateLeaderboard() (string, error) {
 
 func (d *Discord) Close() error {
 	return d.Client.Close()
+}
+
+func (d *Discord) SetBotStatus() {
+	now := time.Now()
+	botRunningSince := "Bot running since: " + now.Format("2006-01-02 15:04:05")
+	err := d.Client.UpdateCustomStatus(botRunningSince)
+	log.Printf("Error setting bot status: %v", err)
 }

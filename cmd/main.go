@@ -110,6 +110,8 @@ func main() {
 		return
 	}
 
+	discordClient.SetBotStatus()
+
 	log.Println("Bot is running. Press CTRL+C to exit.")
 
 	// Await a signal to exit
